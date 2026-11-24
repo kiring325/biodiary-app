@@ -1,0 +1,19 @@
+# このファイルを wrangler.toml という名前でコピーし、<> の部分を自分の環境に合わせて書き換える。
+# wrangler.toml は Git に含めない（.gitignore 済み）。秘密の値は wrangler secret put で別に登録する。
+
+name = "biodiary-api"
+main = "src/index.js"
+compatibility_date = "2026-10-07"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "biodiary-accounts"
+database_id = "<wrangler d1 create で表示された database_id>"
+migrations_dir = "migrations"
+
+[vars]
+PI_ORIGIN = "https://<写真サーバー（Raspberry Pi）の公開URL>"
+ALLOWED_ORIGINS = "https://<ブラウザ版の公開URL>"
+MAX_ACCOUNTS = "1000"
+MAX_COMMUNITY_MEMBERS = "60"
+LEGACY_LOGIN_ENABLED = "false"

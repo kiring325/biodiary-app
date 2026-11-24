@@ -1,0 +1,10 @@
+.gradle/
+build/
+app/build/
+local.properties
+secrets.properties
+*.iml
+.idea/
+server/__pycache__/
+server/*.pyc
+server/data/

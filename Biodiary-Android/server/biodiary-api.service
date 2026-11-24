@@ -1,0 +1,21 @@
+# 見本です。ユーザー名・パスは配置先に合わせて書き換えてください。
+[Unit]
+Description=Biodiary API
+After=network.target
+
+[Service]
+Type=simple
+User=biodiary
+WorkingDirectory=/home/biodiary/biodiary-api
+Environment=BIODIARY_DATA_DIR=/srv/biodiary-data
+Environment=BIODIARY_MAX_USERS=10
+Environment=BIODIARY_MAX_UPLOAD_BYTES=8388608
+ExecStart=/usr/bin/waitress-serve --host=127.0.0.1 --port=8080 --threads=2 biodiary_api:app
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

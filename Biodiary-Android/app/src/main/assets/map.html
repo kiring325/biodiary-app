@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="leaflet.css">
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; }
+    #map { position: absolute; inset: 0; min-height: 205px; background: #edf0e8; }
+    #map-status { position: absolute; z-index: 1000; top: 12px; left: 12px; right: 12px; padding: 10px 12px; border-radius: 8px; background: #fff; color: #334; font: 13px sans-serif; box-shadow: 0 1px 5px #0003; }
+    #map-status[hidden] { display: none; }
+    .leaflet-container { font-family: sans-serif; }
+    .leaflet-control-attribution { font-size: 10px !important; }
+    .photo-pin { width: 54px; height: 54px; border: 3px solid var(--genre-color); border-radius: 14px 14px 14px 4px; background: white; padding: 3px; box-sizing: border-box; position: relative; overflow: hidden; box-shadow: 0 2px 7px #0005; }
+    .photo-pin > img { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; border-radius: 9px; }
+    .owner-avatar { position: absolute; top: 2px; left: 2px; width: 21px; height: 21px; border-radius: 50%; border: 2px solid white; background: #457845; color: white; display: grid; place-items: center; font: bold 10px sans-serif; overflow: hidden; }
+    .owner-avatar img { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .photo-pin.empty { display:flex; align-items:center; justify-content:center; color:#426b50; font-size:23px; }
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="観察場所の地図"></div>
+  <div id="map-status">地図を読み込んでいます…</div>
+  <script src="leaflet.js"></script>
+  <script>
+    const mapRoot = document.getElementById('map');
+    const mapStatus = document.getElementById('map-status');
+    const leafletCss = document.querySelector('link[href="leaflet.css"]');
+    console.info('Biodiary map page started; Leaflet=' + typeof L);
+    console.info('Leaflet stylesheet loaded=' + Boolean(leafletCss && leafletCss.sheet));
+    const showMapError = error => {
+      console.error('Biodiary map initialization failed', error);
+      mapStatus.hidden = true;
+      const message = document.createElement('div');
+      message.style.cssText = 'margin:12px;padding:12px;border-radius:10px;background:#fff;color:#7a2d2d;font:13px sans-serif;white-space:pre-wrap;';
+      message.textContent = '地図を初期化できませんでした。\n' + String(error);
+      mapRoot.replaceChildren(message);
+    };
+    try {
+      const map = L.map('map', { zoomControl: false }).setView([36.2, 138.25], 5.15);
+      window.moriSetSize = (width, height) => {
+        mapRoot.style.width = `${width}px`;
+        mapRoot.style.height = `${Math.max(1, height)}px`;
+        map.invalidateSize({ animate: false });
+        console.info(`Native viewport size applied: ${Math.round(width)}x${Math.round(height)}`);
+      };
+      let loadedTileCount = 0;
+      const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors · ODbL (openstreetmap.org/copyright)'
+      }).addTo(map);
+      tileLayer.on('tileload', () => {
+        loadedTileCount += 1;
+        mapStatus.hidden = true;
+        if (loadedTileCount === 1) console.info('First OpenStreetMap tile loaded');
+      });
+      tileLayer.on('tileerror', event => {
+        console.error('OpenStreetMap tile failed: ' + event.tile.src);
+      });
+      setTimeout(() => {
+        if (loadedTileCount === 0) {
+          mapStatus.textContent = '地図画像を読み込めません。エミュレーターのネット接続をご確認ください。';
+          mapStatus.hidden = false;
+          console.error('No OpenStreetMap tiles loaded after 8 seconds');
+        }
+      }, 8000);
+      console.info('Leaflet map initialized; requesting OpenStreetMap tiles');
+      L.control.zoom({ position: 'topright' }).addTo(map);
+      const pins = L.layerGroup().addTo(map);
+      setTimeout(() => {
+        const tile = mapRoot.querySelector('.leaflet-tile');
+        const tileRect = tile ? tile.getBoundingClientRect() : null;
+        const mapRect = mapRoot.getBoundingClientRect();
+        const zoomControl = mapRoot.querySelector('.leaflet-control-zoom');
+        console.info(`Map render check: map=${Math.round(mapRect.width)}x${Math.round(mapRect.height)}, css=${Boolean(leafletCss && leafletCss.sheet)}, tile=${tileRect ? Math.round(tileRect.width) + 'x' + Math.round(tileRect.height) + ', image=' + tile.naturalWidth + 'x' + tile.naturalHeight : 'none'}, zoomControl=${Boolean(zoomControl)}`);
+      }, 1000);
+      map.on('click', event => Biodiary.onMapTap(event.latlng.lat, event.latlng.lng));
+      window.moriSetCenter = (lat, lng, zoom) => map.setView([lat, lng], zoom);
+      window.moriSetPins = records => {
+        pins.clearLayers();
+        records.forEach(pin => {
+          const contents = pin.photo
+            ? `<img src="${pin.photo}" alt="">`
+            : '<span aria-hidden="true">●</span>';
+          const initial = String(pin.ownerInitial || '').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 1);
+          const badge = pin.ownerAvatar || pin.ownerInitial
+            ? `<span class="owner-avatar">${pin.ownerAvatar ? `<img src="${pin.ownerAvatar}" alt="">` : initial}</span>` : '';
+          const icon = L.divIcon({
+            className: '',
+            html: `<div class="photo-pin${pin.photo ? '' : ' empty'}" style="--genre-color:${pin.color}">${contents}${badge}</div>`,
+            iconSize: [54, 54],
+            iconAnchor: [0, 54]
+          });
+          L.marker([pin.lat, pin.lng], { icon }).addTo(pins)
+            .on('click', event => {
+              if (event.originalEvent?.target?.closest?.('.owner-avatar')) Biodiary.onPinOwnerTap(pin.id);
+              else Biodiary.onPinTap(pin.id);
+            });
+        });
+      };
+      setTimeout(() => {
+        try { map.invalidateSize(); Biodiary.onMapReady(); }
+        catch (error) { showMapError(error); }
+      }, 250);
+    } catch (error) {
+      showMapError(error);
+    }
+  </script>
+</body>
+</html>

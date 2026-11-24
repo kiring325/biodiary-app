@@ -1,0 +1,32 @@
+# Local credentials and machine-specific settings
+**/.env
+**/.env.*
+**/secrets.properties
+**/local.properties
+**/.wrangler/
+**/node_modules/.cache/wrangler/
+
+# Dependencies and generated build files
+**/node_modules/
+**/.gradle/
+**/.gradle-sandbox/
+**/.gradle-sandbox-home/
+**/build/
+**/.cache/
+
+# Local databases, logs, and signing keys
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/*.log
+**/*.jks
+**/*.keystore
+
+# 配布用の APK はリポジトリに含めない（公開サイトへの配置時に置く）
+**/*.apk
+**/*.zip
+
+# 環境ごとの接続先（URL）を書いたファイル。見本は *.example.* を参照
+Biodiary-Cloudflare/wrangler.toml
+Biodiary-Web/config.js
+__pycache__/

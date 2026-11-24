@@ -1,0 +1,12 @@
+{
+  "name": "biodiary-cloudflare-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 migrations apply biodiary-accounts --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "いきもの手帖",
+  "short_name": "いきもの手帖",
+  "lang": "ja",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#264026",
+  "theme_color": "#29301a",
+  "description": "写真と地図で、自然の観察を記録するいきもの手帖"
+}
